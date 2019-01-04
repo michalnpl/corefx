@@ -27,6 +27,23 @@ steps:
             /p:Creator=${{ parameters.creator }}
             /p:OfficialBuildId=${{ parameters.officialBuildId }}
             /p:EnableAzurePipelinesReporter=true
+            /bl:Helix_${{ parameters.targetOS}}_${{ parameters.framework}}_${{ parameters.archGroup}}_${{ parameters.configuration}}.binlog
     displayName: Send to Helix
     env:
       SYSTEM_ACCESSTOKEN: $(System.AccessToken) # We need to set this env var to publish helix results to Azure Dev Ops
+
+  - task: CopyFiles@2
+    displayName: Copy helix binlog
+    condition: not(succeeded())
+    inputs:
+      sourceFolder: $(Build.SourcesDirectory)
+      contents: 'Helix*.binlog'
+      targetFolder: $(Build.ArtifactStagingDirectory)
+
+  - task: PublishBuildArtifacts@1
+    displayName: Publish helix binlog
+    inputs:
+      pathToPublish: $(Build.ArtifactStagingDirectory)
+      artifactName: HelixBinlogs
+      artifactType: container
+    condition: not(succeeded())
